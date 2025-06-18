@@ -4,7 +4,7 @@
   "description": "Минимальный сигнальный сервер на Express + ws",
   "main": "server.js",
   "scripts": {
-    "prod": "node ./src/index.ts",
+    "prod": "ts-node ./src/index.ts",
     "dev": "NODE_ENV=development nodemon ./src/index.ts"
   },
   "dependencies": {

@@ -10,7 +10,7 @@ const TOKEN = process.env.TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const allowedOrigins = DEV
-  ? ['http://localhost:3000']
+  ? 'http://localhost:3000'
   : ['https://vududu.com', 'https://nuynel.github.io'];
 
 // SETUP SERVERS
