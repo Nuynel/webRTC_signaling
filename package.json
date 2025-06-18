@@ -2,7 +2,6 @@
   "name": "webrtc-signaling",
   "version": "0.1.0",
   "description": "Минимальный сигнальный сервер на Express + ws",
-  "type": "module",
   "main": "server.js",
   "scripts": {
     "prod": "node ./src/index.ts",
