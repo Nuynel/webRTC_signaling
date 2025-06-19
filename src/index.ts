@@ -4,7 +4,7 @@ import expressWs from "express-ws";
 import * as ws from 'ws'
 
 // ENVIRONMENT VARIABLES
-const PORT = process.env.PORT || 56565;
+const PORT = process.env.PORT || 8000;
 const DEV = process.env.NODE_ENV === "development";
 const TOKEN = process.env.TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
@@ -54,18 +54,28 @@ app.ws('/signaling', (ws, req) => {
   }
   ws.send(JSON.stringify(message))
   
-  ws.on('ping', () => {
-    console.log('ping', sessionId);
-  })
+  // ⏱️ keep-alive ping
+  const pingInterval = setInterval(() => {
+    if (ws.readyState === ws.OPEN) {
+      ws.ping(); // 💡 Инициирует ping (в браузер не попадёт, но соединение оживляет)
+    }
+  }, 25000); // безопасный интервал <30 сек
+  
+  // ws.on('ping', () => {
+  //   console.log('ping', sessionId);
+  // })
   
   ws.on('pong', () => {
-    console.log('pong', sessionId);
+    console.log('pong from', sessionId);
   })
   
   ws.on('message', raw => {
     const {id, type, description}: sdpMessage = JSON.parse(raw.toString())
     console.log('SDP message from ', sessionId);
-    const peer = clients.get(id)
+    let peer = clients.get(id)
+    if (!peer) clients.forEach((value, key) => {
+      if (key !== id) peer = value
+    })
     if (!peer) return console.log('No such peer ', id);
     peer.send(JSON.stringify({id: sessionId, type, description}));
   })
