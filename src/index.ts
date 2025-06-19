@@ -4,7 +4,7 @@ import expressWs from "express-ws";
 import * as ws from 'ws'
 
 // ENVIRONMENT VARIABLES
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 56565;
 const DEV = process.env.NODE_ENV === "development";
 const TOKEN = process.env.TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
