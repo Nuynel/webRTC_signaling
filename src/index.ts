@@ -73,8 +73,8 @@ app.ws('/signaling', (ws, req) => {
     const {id, type, description}: sdpMessage = JSON.parse(raw.toString())
     console.log('SDP message from ', sessionId);
     let peer = clients.get(id)
-    if (!peer) clients.forEach((value, key) => {
-      if (key !== id) peer = value
+    if (!id) clients.forEach((value, key) => {
+      if (key !== sessionId) peer = value
     })
     if (!peer) return console.log('No such peer ', id);
     peer.send(JSON.stringify({id: sessionId, type, description}));
