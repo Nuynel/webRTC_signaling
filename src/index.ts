@@ -11,7 +11,7 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const allowedOrigins = DEV
   ? ['http://localhost:52525']
-  : ['https://vududu.com', 'https://nuynel.github.io'];
+  : ['http://localhost:52525', 'https://vududu.com', 'https://nuynel.github.io'];
 
 // SETUP SERVERS
 const appBase = express();
