@@ -87,7 +87,12 @@ app.ws('/signaling', (ws, req) => {
     if (type === 'update_nickname' && description) {
       clients.set(sessionId, {ws, nickname: description})
       sentUpdatedIds(sessionId)
-      return
+      const message = {
+        type: 'update_nickname',
+        description: 'ok',
+        id: '',
+      }
+      return ws.send(JSON.stringify(message))
     }
     let peer = clients.get(id)
     if (!peer) return console.log('No such peer ', id);
