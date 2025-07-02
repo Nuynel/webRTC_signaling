@@ -10,7 +10,7 @@ const TOKEN = process.env.TOKEN;
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const allowedOrigins = DEV
-  ? 'http://localhost:3000'
+  ? ['http://localhost:52525']
   : ['https://vududu.com', 'https://nuynel.github.io'];
 
 // SETUP SERVERS
@@ -28,7 +28,10 @@ appBase.use(express.json(), cors({
 }));
 
 const { app, getWss } = expressWs(appBase);
-const clients = new Map<string, ws.WebSocket>();
+const clients = new Map<string, {
+  ws: ws.WebSocket,
+  nickname: string
+}>();
 // const sessions = new Set<string>();
 
 const generateUniqueSessionCode = () => {
@@ -45,25 +48,34 @@ type sdpMessage = {
   description?: string;
 }
 
+const sentUpdatedIds = (newId: string) => {
+  clients.forEach((value, key) => {
+    const updMessage = {
+      type: 'update',
+      ids: [...clients.keys()].map((key) => ({id: key, nickname: clients.get(key)?.nickname})).filter(id => id.id !== key),
+    }
+    if (key !== newId) value.ws.send(JSON.stringify(updMessage))
+  })
+}
+
 app.ws('/signaling', (ws, req) => {
   const sessionId = generateUniqueSessionCode()
-  clients.set(sessionId, ws)
+  clients.set(sessionId, {ws, nickname: ''})
   const message = {
     type: 'init',
-    id: sessionId
+    id: sessionId,
+    ids: [...clients.keys()].map((key) => ({id: key, nickname: clients.get(key)?.nickname})).filter(id => id.id !== sessionId),
   }
+  
   ws.send(JSON.stringify(message))
+  sentUpdatedIds(sessionId)
   
   // ⏱️ keep-alive ping
-  const pingInterval = setInterval(() => {
+  const pingIntervalId = setInterval(() => {
     if (ws.readyState === ws.OPEN) {
       ws.ping(); // 💡 Инициирует ping (в браузер не попадёт, но соединение оживляет)
     }
   }, 25000); // безопасный интервал <30 сек
-  
-  // ws.on('ping', () => {
-  //   console.log('ping', sessionId);
-  // })
   
   ws.on('pong', () => {
     console.log('pong from', sessionId);
@@ -72,22 +84,27 @@ app.ws('/signaling', (ws, req) => {
   ws.on('message', raw => {
     const {id, type, description}: sdpMessage = JSON.parse(raw.toString())
     console.log('SDP message from ', sessionId);
+    if (type === 'update_nickname' && description) {
+      clients.set(sessionId, {ws, nickname: description})
+      sentUpdatedIds(sessionId)
+      return
+    }
     let peer = clients.get(id)
-    if (!id) clients.forEach((value, key) => {
-      if (key !== sessionId) peer = value
-    })
     if (!peer) return console.log('No such peer ', id);
-    peer.send(JSON.stringify({id: sessionId, type, description}));
+    peer.ws.send(JSON.stringify({id: sessionId, type, description}));
   })
 
   ws.on('close', () => {// зачистка по RFC 8863 тайм-аутам
     console.log('Connection closed')
     clients.delete(sessionId)
+    clearInterval(pingIntervalId);
+    sentUpdatedIds(sessionId);
   });
   
   ws.on('error', err => {
     console.error('WebSocket error:', err);
     clients.delete(sessionId);
+    sentUpdatedIds(sessionId)
   })
 
 });
